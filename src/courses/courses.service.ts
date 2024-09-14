@@ -24,7 +24,7 @@ export class CoursesService {
     return course;
   }
 
-  create(createCourseDTO: any): void {
+  create(createCourseDTO: any): any {
     this.courses.push(createCourseDTO);
     return createCourseDTO;
   }
