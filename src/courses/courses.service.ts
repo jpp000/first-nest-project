@@ -1,50 +1,61 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Course } from './courses.entity';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { Course } from './entities/courses.entity'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { CreateCourseDTO } from './dtos/create-course.dto'
+import { UpdateCourseDTO } from './dtos/update-course.dto'
 
 @Injectable()
 export class CoursesService {
-  private courses: Course[] = [
-    {
-      id: 1,
-      name: 'NestJS',
-      description: 'Curso sobre os fundamentos sobre NestJS',
-      tags: ['node.js', 'nestjs', 'javascript', 'typescript'],
-    },
-  ];
+  constructor(
+    @InjectRepository(Course)
+    private readonly coursesRepository: Repository<Course>,
+  ) {}
 
-  findAll(): Course[] {
-    return this.courses;
+  async findAll(): Promise<Course[]> {
+    return await this.coursesRepository.find()
   }
 
-  findOne(id: number): Course {
-    const course = this.courses.find((course) => course.id === id);
-    if (!course) {
-      throw new NotFoundException(`Course ID: ${id} not found`);
-    }
-    return course;
-  }
-
-  create(createCourseDTO: any): any {
-    this.courses.push(createCourseDTO);
-    return createCourseDTO;
-  }
-
-  update(id: number, updateCourseDTO: any) {
-    const existingCourse = this.findOne(id);
-
-    if (existingCourse) {
-      const index = this.courses.findIndex((course) => course.id === id);
-      this.courses[index] = {
+  async findOne(id: number): Promise<Course> {
+    const course = await this.coursesRepository.findOne({
+      where: {
         id,
-        ...updateCourseDTO,
-      };
+      },
+    })
+
+    if (!course) {
+      throw new NotFoundException(`Course ID: ${id} not found`)
     }
+
+    return course
   }
 
-  remove(id: number) {
-    const index = this.courses.findIndex((course) => course.id === id);
-    if (index >= 0) {
-      this.courses.splice(index, 1);
+  async create(createCourseDTO: CreateCourseDTO): Promise<Course> {
+    const course = this.coursesRepository.create(createCourseDTO)
+
+    return this.coursesRepository.save(course)
+  }
+
+  async update(id: number, updateCourseDTO: UpdateCourseDTO): Promise<Course> {
+    const existingCourse = await this.coursesRepository.preload({
+      ...updateCourseDTO,
+      id,
+    })
+
+    if (!existingCourse) {
+      throw new NotFoundException(`Course ID: ${id} not found`)
     }
+
+    return this.coursesRepository.save(existingCourse)
+  }
+
+  async remove(id: number) {
+    const course = await this.findOne(id)
+
+    if (!course) {
+      throw new NotFoundException(`Course ID: ${id} not found`)
+    }
+
+    return this.coursesRepository.remove(course)
   }
 }
