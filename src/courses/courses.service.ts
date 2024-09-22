@@ -8,12 +8,11 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 
 @Injectable()
 export class CoursesService {
-  constructor(
-    @InjectRepository(Course)
-    private readonly courseRepository: Repository<Course>,
-    @InjectRepository(Tag)
-    private readonly tagRepository: Repository<Tag>,
-  ) {}
+  @InjectRepository(Course)
+  private readonly courseRepository: Repository<Course>
+
+  @InjectRepository(Tag)
+  private readonly tagRepository: Repository<Tag>
 
   async findAll() {
     return this.courseRepository.find({
@@ -55,10 +54,12 @@ export class CoursesService {
       id,
       tags,
     })
+
     if (!course) {
       throw new NotFoundException(`Course ID ${id} not found`)
     }
-    return this.courseRepository.remove(course)
+
+    return this.courseRepository.save(course)
   }
 
   async remove(id: string) {
